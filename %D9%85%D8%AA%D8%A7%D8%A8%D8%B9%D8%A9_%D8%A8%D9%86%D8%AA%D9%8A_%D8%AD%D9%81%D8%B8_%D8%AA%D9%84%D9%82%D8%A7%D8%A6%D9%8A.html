@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>متابعة بنتي</title>
+<style>
+:root{--bg:#fff7f9;--card:#ffffff;--tx:#3a2a30;--mut:#8a7480;--pri:#e0558a;--pri2:#fde3ec;--bd:#f1d9e1;--w:#e0558a;--h:#3b9bd9;--ok:#2e9e6b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1519;--card:#2a1e24;--tx:#f6e9ee;--mut:#b9a0ab;--pri:#f06fa0;--pri2:#43232f;--bd:#46303a;--w:#f06fa0;--h:#6bb8ee;--ok:#4cc58d}}
+:root[data-theme="dark"]{--bg:#1d1519;--card:#2a1e24;--tx:#f6e9ee;--mut:#b9a0ab;--pri:#f06fa0;--pri2:#43232f;--bd:#46303a;--w:#f06fa0;--h:#6bb8ee;--ok:#4cc58d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;max-width:560px;margin-inline:auto;padding:14px}
+h1{font-size:20px;margin:6px 0 14px}
+h2{font-size:16px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1;min-width:90px}
+label{font-size:12px;color:var(--mut);display:block;margin-bottom:3px}
+input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font-size:16px;font-family:inherit}
+button{border:0;border-radius:12px;padding:12px;font-size:16px;font-family:inherit;background:var(--pri);color:#fff;cursor:pointer;width:100%;margin-top:10px}
+button.sec{background:var(--pri2);color:var(--pri)}
+button.small{width:auto;margin:0;padding:6px 10px;font-size:13px;background:transparent;color:var(--mut)}
+.big{font-size:34px;font-weight:700;text-align:center;margin:6px 0;color:var(--pri);direction:ltr}
+.mut{color:var(--mut);font-size:13px;text-align:center}
+.alert{background:var(--pri);color:#fff;border-radius:14px;padding:14px;text-align:center;font-weight:700;margin-bottom:14px;display:none}
+.alert.on{display:block}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td,th{padding:8px 4px;border-bottom:1px solid var(--bd);text-align:center}
+th{color:var(--mut);font-size:12px;font-weight:600}
+.chart{overflow-x:auto}
+svg{width:100%;height:auto;display:block}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{margin:0;padding:10px;font-size:15px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<h1>🌸 متابعة بنتي</h1>
+<div class="tabs">
+  <button id="t1" onclick="tab(1)">🍼 الرضعات</button>
+  <button id="t2" class="sec" onclick="tab(2)">📏 الوزن والطول</button>
+</div>
+
+<div class="mut" id="st" style="margin:-6px 0 10px"></div>
+<div id="alert" class="alert">🍼 ميعاد الرضعة! <button class="sec" onclick="dismiss()" style="margin-top:8px">تمام</button></div>
+
+<section id="p1">
+  <div class="card">
+    <h2>الرضعة الجاية</h2>
+    <div class="big" id="cd">--:--:--</div>
+    <div class="mut" id="nx">لسه مسجلتيش أي رضعة</div>
+    <button onclick="feedNow()">سجّلت رضعة دلوقتي ✅</button>
+    <div class="row" style="margin-top:12px;align-items:end">
+      <div><label>كل كام ساعة؟</label>
+        <select id="iv" onchange="setIv()">
+          <option value="1.5">كل ساعة ونص</option><option value="2">كل ساعتين</option><option value="2.5">كل ساعتين ونص</option><option value="3">كل 3 ساعات</option><option value="3.5">كل 3 ساعات ونص</option><option value="4">كل 4 ساعات</option>
+        </select></div>
+      <div><label>تنبيه على الموبايل</label><button class="sec" id="nb" style="margin:0;padding:10px" onclick="askNotif()">تفعيل</button></div>
+    </div>
+    <div class="mut" style="margin-top:8px">التنبيه بيشتغل والصفحة مفتوحة.</div>
+  </div>
+  <div class="card">
+    <h2>رضعات النهاردة (<span id="fc">0</span>)</h2>
+    <table><tbody id="fl"></tbody></table>
+  </div>
+</section>
+
+<section id="p2" class="hide">
+  <div class="card">
+    <h2>تسجيل قياس جديد</h2>
+    <div class="row">
+      <div><label>التاريخ</label><input type="date" id="d"></div>
+      <div><label>الوزن (كجم)</label><input type="number" id="w" step="0.01" inputmode="decimal" placeholder="4.50"></div>
+      <div><label>الطول (سم)</label><input type="number" id="h" step="0.1" inputmode="decimal" placeholder="55"></div>
+    </div>
+    <button onclick="addM()">حفظ</button>
+  </div>
+  <div class="card">
+    <h2>📐 المرجع الطبي (منظمة الصحة العالمية – بنات)</h2>
+    <label>تاريخ ميلادها</label><input type="date" id="bd" onchange="setBd()">
+    <div id="ra" style="margin-top:10px"></div>
+  </div>
+  <div class="card chart"><h2>⚖️ الوزن</h2><div id="cw"></div></div>
+  <div class="card chart"><h2>📏 الطول</h2><div id="ch"></div></div>
+  <div class="card chart"><h2>⚖️ وزنها مقابل المرجع</h2><div id="rc1"></div></div>
+  <div class="card chart"><h2>📏 طولها مقابل المرجع</h2><div id="rc2"></div></div>
+  <div class="card">
+    <h2>📏 المسطرة: الحد الأدنى حسب العمر</h2>
+    <table><thead><tr><th>العمر</th><th>أقل وزن</th><th>أقل طول</th><th>المتوسط</th></tr></thead><tbody id="rt"></tbody></table>
+    <div class="mut" style="margin-top:10px">الحد الأدنى = المئين الـ3 في معايير نمو WHO للبنات (يعني 3 من كل 100 بنت أقل منه). مولودة في الأسبوع 38 فمفيش تعديل في العمر. ده مرجع إحصائي مش تشخيص، ودكتور الأطفال هو اللي يقيّم.</div>
+  </div>
+  <div class="card">
+    <h2>السجل</h2>
+    <table><thead><tr><th>التاريخ</th><th>الوزن</th><th>الطول</th><th></th></tr></thead><tbody id="ml"></tbody></table>
+  </div>
+</section>
+
+<div class="card" style="margin-top:14px">
+  <h2>💾 الحفظ التلقائي</h2>
+  <div class="mut" id="saveStatus">البيانات محفوظة تلقائيًا على هذا الجهاز</div>
+  <div class="mut" style="margin-top:6px">مش محتاجة تعملي نسخة احتياطية أو تنسخي أي بيانات. افتحي الملف من نفس المتصفح والجهاز علشان تلاقي سجلك.</div>
+</div>
+<script type="application/json" id="seed">{"meas":[],"feeds":[],"iv":3,"alerted":0}</script>
+<script>
+var S;try{S=JSON.parse(document.getElementById('seed').textContent)}catch(e){S={meas:[],feeds:[],iv:3,alerted:0}}
+var art=null,timer=null;
+function $(i){return document.getElementById(i)}
+function iso(d){var z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10)}
+function ar(n){return String(n).replace(/\d/g,function(c){return '٠١٢٣٤٥٦٧٨٩'[c]})}
+function fmtT(t){return new Date(t).toLocaleTimeString('ar-EG',{hour:'numeric',minute:'2-digit'})}
+function fmtD(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('ar-EG',{day:'numeric',month:'short',year:'numeric'})}
+
+function save(){
+  var j=JSON.stringify(S),ok=false;
+  try{localStorage.setItem('babyTracker',j);ok=true}catch(e){}
+  $('st').textContent=ok?'اتحفظت البيانات تلقائيًا ✓':'بحاول أحفظ البيانات...';
+  $('saveStatus').textContent=ok?'آخر حفظ تلقائي: '+new Date().toLocaleTimeString('ar-EG',{hour:'numeric',minute:'2-digit'})+' ✓':'جاري الحفظ في مساحة التخزين الداخلية...';
+  idbSet(j);
+}
+function load(j){
+  try{var o=JSON.parse(j);if(o&&o.meas){S=o;S.feeds=S.feeds||[];S.iv=S.iv||3;S.alerted=S.alerted||0}}catch(e){}
+}
+async function init(){
+  if(!S.meas.length&&!S.feeds.length){try{var j=localStorage.getItem('babyTracker');if(j)load(j)}catch(e){}
+    if(!S.meas.length&&!S.feeds.length)idbGet(function(x){if(x){load(x);render()}})}
+  if(location.hash==='#growth')tab(2);
+  render();
+}
+
+function idb(fn){
+  try{
+    if(!window.indexedDB){fn(null);return}
+    var r=indexedDB.open('babyTracker',1);
+    r.onupgradeneeded=function(){if(!r.result.objectStoreNames.contains('k'))r.result.createObjectStore('k')};
+    r.onsuccess=function(){fn(r.result)};
+    r.onerror=function(){fn(null)};
+  }catch(e){fn(null)}
+}
+function idbSet(j){
+  idb(function(d){
+    if(!d)return;
+    try{
+      var tx=d.transaction('k','readwrite');
+      tx.objectStore('k').put(j,'s');
+      tx.oncomplete=function(){
+        $('saveStatus').textContent='البيانات محفوظة تلقائيًا على الجهاز ✓';
+        $('st').textContent='تم الحفظ تلقائيًا ✓';
+      };
+      tx.onerror=function(){$('saveStatus').textContent='الحفظ المحلي متاح؛ استخدمي نفس المتصفح والجهاز';};
+    }catch(e){}
+  });
+}
+function idbGet(cb){
+  idb(function(d){
+    if(!d)return cb(null);
+    try{
+      var q=d.transaction('k').objectStore('k').get('s');
+      q.onsuccess=function(){cb(q.result||null)};
+      q.onerror=function(){cb(null)};
+    }catch(e){cb(null)}
+  });
+}
+function tab(n){
+  $('p1').className=n==1?'':'hide';$('p2').className=n==2?'':'hide';
+  $('t1').className=n==1?'':'sec';$('t2').className=n==2?'':'sec';
+  try{location.hash=n==2?'growth':'feeds'}catch(e){}
+}
+function feedNow(){S.feeds.push(Date.now());S.alerted=0;dismiss();save();render()}
+function delF(t){S.feeds=S.feeds.filter(function(x){return x!==t});save();render()}
+function setIv(){S.iv=parseFloat($('iv').value);S.alerted=0;save();render()}
+function addM(){
+  var d=$('d').value,w=parseFloat($('w').value),h=parseFloat($('h').value);
+  if(!d||(isNaN(w)&&isNaN(h))){return}
+  S.meas=S.meas.filter(function(m){return m.d!==d});
+  S.meas.push({d:d,w:isNaN(w)?null:w,h:isNaN(h)?null:h});
+  S.meas.sort(function(a,b){return a.d<b.d?-1:1});
+  $('w').value='';$('h').value='';save();render();
+}
+function delM(d){S.meas=S.meas.filter(function(m){return m.d!==d});save();render()}
+
+function chart(key,color,unit){
+  var pts=S.meas.filter(function(m){return m[key]!=null});
+  if(pts.length<1)return '<div class="mut">سجّلي قياس علشان يظهر الرسم</div>';
+  var W=Math.max(320,pts.length*60),H=190,L=40,R=14,T=16,B=34;
+  var v=pts.map(function(p){return p[key]}),mn=Math.min.apply(null,v),mx=Math.max.apply(null,v);
+  if(mn===mx){mn-=1;mx+=1}
+  var pad=(mx-mn)*.15;mn-=pad;mx+=pad;
+  function X(i){return pts.length==1?W/2:L+i*(W-L-R)/(pts.length-1)}
+  function Y(x){return T+(mx-x)*(H-T-B)/(mx-mn)}
+  var s='<svg viewBox="0 0 '+W+' '+H+'" style="min-width:'+W+'px;direction:ltr">';
+  for(var g=0;g<4;g++){var gv=mn+(mx-mn)*g/3,gy=Y(gv);
+    s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+gy+'" y2="'+gy+'" stroke="var(--bd)"/><text x="'+(L-4)+'" y="'+(gy+4)+'" font-size="11" text-anchor="end" fill="var(--mut)">'+gv.toFixed(1)+'</text>'}
+  var path=pts.map(function(p,i){return (i?'L':'M')+X(i)+' '+Y(p[key])}).join(' ');
+  s+='<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="2.5"/>';
+  pts.forEach(function(p,i){
+    s+='<circle cx="'+X(i)+'" cy="'+Y(p[key])+'" r="4" fill="'+color+'"/>';
+    s+='<text x="'+X(i)+'" y="'+(Y(p[key])-8)+'" font-size="11" text-anchor="middle" fill="var(--tx)">'+p[key]+'</text>';
+    s+='<text x="'+X(i)+'" y="'+(H-12)+'" font-size="10" text-anchor="middle" fill="var(--mut)">'+p.d.slice(5).replace('-','/')+'</text>';
+  });
+  return s+'</svg>';
+}
+
+var REF={
+w3:[2.4,3.2,4.0,4.6,5.1,5.5,5.8,6.1,6.3,6.6,6.8,7.0,7.1,7.3,7.5,7.7,7.8,8.0,8.2,8.3,8.5,8.7,8.8,9.0,9.2],
+w50:[3.2,4.2,5.1,5.8,6.4,6.9,7.3,7.6,7.9,8.2,8.5,8.7,8.9,9.2,9.4,9.6,9.8,10.0,10.2,10.4,10.6,10.9,11.1,11.3,11.5],
+w97:[4.2,5.4,6.5,7.4,8.1,8.7,9.2,9.6,10.0,10.4,10.7,11.0,11.3,11.6,11.9,12.2,12.5,12.7,13.0,13.3,13.5,13.8,14.1,14.3,14.6],
+l3:[45.6,50.0,53.2,55.8,58.0,59.9,61.5,62.9,64.3,65.6,66.8,68.0,69.2,70.3,71.3,72.4,73.3,74.3,75.2,76.2,77.0,77.9,78.7,79.6,80.3],
+l50:[49.1,53.7,57.1,59.8,62.1,64.0,65.7,67.3,68.7,70.1,71.5,72.8,74.0,75.2,76.4,77.5,78.6,79.7,80.7,81.7,82.7,83.7,84.6,85.5,86.4],
+l97:[52.7,57.4,60.9,63.8,66.2,68.2,70.0,71.6,73.2,74.7,76.1,77.5,78.9,80.2,81.4,82.7,83.9,85.0,86.2,87.3,88.4,89.4,90.5,91.5,92.5]};
+function rv(a,m){m=Math.max(0,Math.min(24,m));var i=Math.floor(m);if(i>=24)return a[24];return a[i]+(a[i+1]-a[i])*(m-i)}
+function dt(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+function ageM(d){return (dt(d)-dt(S.bd))/86400000/30.4375}
+function setBd(){S.bd=$('bd').value;save();render()}
+function refChart(key,A,B,C){
+  var W=720,H=240,L=40,R=12,T=14,Bm=30;
+  var mn=Math.min.apply(null,A),mx=Math.max.apply(null,C),pad=(mx-mn)*.05;mn-=pad;mx+=pad;
+  function X(m){return L+m*(W-L-R)/24}
+  function Y(v){return T+(mx-v)*(H-T-Bm)/(mx-mn)}
+  function ln(arr,col,dash){return '<path d="'+arr.map(function(v,i){return (i?'L':'M')+X(i)+' '+Y(v)}).join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2"'+(dash?' stroke-dasharray="5 4"':'')+'/>'}
+  var s='<div class="mut" style="margin-bottom:6px">🔴 الحد الأدنى (3%) · ⚪ المتوسط · ⚪ الأعلى (97%) · ● بنتك</div><svg viewBox="0 0 '+W+' '+H+'" style="min-width:'+W+'px;direction:ltr">';
+  for(var g=0;g<5;g++){var gv=mn+(mx-mn)*g/4,gy=Y(gv);
+    s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+gy+'" y2="'+gy+'" stroke="var(--bd)"/><text x="'+(L-4)+'" y="'+(gy+4)+'" font-size="11" text-anchor="end" fill="var(--mut)">'+gv.toFixed(0)+'</text>'}
+  for(var t=0;t<=24;t+=3){s+='<text x="'+X(t)+'" y="'+(H-10)+'" font-size="11" text-anchor="middle" fill="var(--mut)">'+t+' ش</text>'}
+  s+=ln(A,'#d9534f',0)+ln(B,'var(--mut)',1)+ln(C,'var(--mut)',0);
+  if(S.bd){
+    var pts=S.meas.filter(function(m){return m[key]!=null&&ageM(m.d)>=0&&ageM(m.d)<=24});
+    if(pts.length>1)s+='<path d="'+pts.map(function(p,i){return (i?'L':'M')+X(ageM(p.d))+' '+Y(p[key])}).join(' ')+'" fill="none" stroke="var(--pri)" stroke-width="2.5"/>';
+    pts.forEach(function(p){s+='<circle cx="'+X(ageM(p.d))+'" cy="'+Y(p[key])+'" r="5" fill="var(--pri)"/>'});
+  }
+  return s+'</svg>';
+}
+function renderRef(){
+  if(S.bd)$('bd').value=S.bd;
+  var a='';
+  if(!S.bd){a='<div class="mut">دخّلي تاريخ ميلادها علشان يظهر الحد الأدنى لعمرها.</div>'}
+  else{
+    var m=ageM(iso(new Date()));
+    if(m<0){a='<div class="mut">تاريخ الميلاد لسه جاي.</div>'}
+    else if(m>24){a='<div class="mut">المرجع هنا بيغطي لحد سنتين.</div>'}
+    else{
+      var days=Math.floor(m*30.4375);
+      a='<div class="mut">عمرها النهاردة: <b>'+ar(Math.floor(days/7))+' أسبوع و'+ar(days%7)+' يوم</b></div><div class="row" style="margin-top:8px">'+
+      '<div class="card" style="margin:0;text-align:center"><div class="mut">أقل وزن مقبول</div><div class="big" style="font-size:24px">'+rv(REF.w3,m).toFixed(1)+' كجم</div><div class="mut">المتوسط '+rv(REF.w50,m).toFixed(1)+'</div></div>'+
+      '<div class="card" style="margin:0;text-align:center"><div class="mut">أقل طول مقبول</div><div class="big" style="font-size:24px">'+rv(REF.l3,m).toFixed(1)+' سم</div><div class="mut">المتوسط '+rv(REF.l50,m).toFixed(1)+'</div></div></div>';
+      [['w','الوزن','كجم',REF.w3],['h','الطول','سم',REF.l3]].forEach(function(k){
+        var l=S.meas.filter(function(x){return x[k[0]]!=null}).pop();
+        if(l&&ageM(l.d)>=0&&ageM(l.d)<=24){
+          var min=rv(k[3],ageM(l.d)),ok=l[k[0]]>=min;
+          a+='<div style="margin-top:8px;color:'+(ok?'var(--ok)':'#d9534f')+'">'+(ok?'✅':'⚠️')+' آخر '+k[1]+' ('+ar(l[k[0]])+' '+k[2]+') '+(ok?'فوق':'أقل من')+' الحد الأدنى لعمرها وقتها ('+ar(min.toFixed(1))+')'+(ok?'':' — الأفضل تعرضيها على دكتور الأطفال')+'</div>';
+        }
+      });
+    }
+  }
+  $('ra').innerHTML=a;
+  $('rc1').innerHTML=refChart('w',REF.w3,REF.w50,REF.w97);
+  $('rc2').innerHTML=refChart('h',REF.l3,REF.l50,REF.l97);
+  var rows='',i;
+  for(i=0;i<=12;i++){var mm=i*7/30.4375;rows+=rr(i==0?'يوم الولادة':'أسبوع '+ar(i),mm)}
+  for(i=3;i<=24;i++){rows+=rr(ar(i)+' شهر',i)}
+  $('rt').innerHTML=rows;
+}
+function rr(lbl,m){return '<tr><td>'+lbl+'</td><td>'+ar(rv(REF.w3,m).toFixed(1))+'</td><td>'+ar(rv(REF.l3,m).toFixed(1))+'</td><td>'+ar(rv(REF.w50,m).toFixed(1))+' / '+ar(rv(REF.l50,m).toFixed(1))+'</td></tr>'}
+function render(){
+  $('iv').value=String(S.iv);
+  $('cw').innerHTML=chart('w','var(--w)');
+  $('ch').innerHTML=chart('h','var(--h)');
+  var rows='';
+  S.meas.slice().reverse().forEach(function(m){
+    rows+='<tr><td>'+fmtD(m.d)+'</td><td>'+(m.w!=null?ar(m.w)+' كجم':'—')+'</td><td>'+(m.h!=null?ar(m.h)+' سم':'—')+'</td><td><button class="small" onclick="delM(\''+m.d+'\')">حذف</button></td></tr>';
+  });
+  $('ml').innerHTML=rows||'<tr><td colspan="4" class="mut">لسه مفيش قياسات</td></tr>';
+  var today=iso(new Date()),fl='',c=0;
+  S.feeds.slice().reverse().forEach(function(t){
+    if(iso(new Date(t))===today){c++;fl+='<tr><td>🍼 '+fmtT(t)+'</td><td><button class="small" onclick="delF('+t+')">حذف</button></td></tr>'}
+  });
+  renderRef();
+  $('fc').textContent=ar(c);
+  $('fl').innerHTML=fl||'<tr><td class="mut">مفيش رضعات متسجلة النهاردة</td></tr>';
+  tick();
+}
+
+function nextT(){if(!S.feeds.length)return null;return S.feeds[S.feeds.length-1]+S.iv*3600000}
+function tick(){
+  var n=nextT();
+  if(n==null){$('cd').textContent='--:--:--';return}
+  var diff=n-Date.now(),late=diff<0,a=Math.abs(diff),
+  h=Math.floor(a/3600000),m=Math.floor(a%3600000/60000),s=Math.floor(a%60000/1000);
+  function p(x){return (x<10?'0':'')+x}
+  $('cd').textContent=(late?'+':'')+p(h)+':'+p(m)+':'+p(s);
+  $('nx').textContent=late?'اتأخرت عن الميعاد':'الميعاد الساعة '+fmtT(n);
+  if(late&&S.alerted!==n){S.alerted=n;fire()}
+}
+function fire(){
+  $('alert').className='alert on';
+  try{var c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.2;o.start();o.stop(c.currentTime+.6)}catch(e){}
+  try{if(navigator.vibrate)navigator.vibrate([300,150,300])}catch(e){}
+  try{if(window.Notification&&Notification.permission==='granted')new Notification('🍼 ميعاد الرضعة')}catch(e){}
+}
+function dismiss(){$('alert').className='alert'}
+function askNotif(){
+  try{if(window.Notification){Notification.requestPermission().then(function(r){$('nb').textContent=r==='granted'?'مفعّل ✓':'مش متاح'})}else{$('nb').textContent='مش متاح'}}catch(e){$('nb').textContent='مش متاح'}
+}
+try{if(window.Notification&&Notification.permission==='granted')$('nb').textContent='مفعّل ✓'}catch(e){}
+$('d').value=iso(new Date());
+setInterval(tick,1000);
+window.addEventListener('pagehide',function(){try{localStorage.setItem('babyTracker',JSON.stringify(S))}catch(e){}});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'){try{localStorage.setItem('babyTracker',JSON.stringify(S))}catch(e){}}});
+init();
+</script>
+</body>
+</html>
