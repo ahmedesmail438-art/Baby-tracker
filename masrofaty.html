@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مصاريفي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F5F6;--card:#fff;--ink:#12303A;--mute:#6B808A;--line:#DCE4E7;--c1:#3B6FD4;--c2:#2E9E7A;--c3:#E0709B;--c4:#D9822B;--c5:#7A5BD6;--c6:#1F9CB5;--c7:#2E9E4F;--c8:#B8860B;--red:#C8442F}
+@media(prefers-color-scheme:dark){:root{--bg:#0F1A1E;--card:#17262C;--ink:#E8F0F2;--mute:#8FA5AE;--line:#273940}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,Tahoma,sans-serif;padding-bottom:80px}
+header{padding:20px 16px 8px}
+h1{margin:0;font-size:24px;font-weight:800}
+.sub{color:var(--mute);font-size:14px}
+main{max-width:640px;margin:auto;padding:0 14px}
+nav{position:fixed;bottom:0;right:0;left:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+nav button{flex:1;border:0;background:none;color:var(--mute);font:600 14px Cairo,Tahoma;padding:14px 4px;cursor:pointer}
+nav button.on{color:var(--ink);box-shadow:inset 0 3px 0 var(--c2)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.total{font-size:34px;font-weight:800}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.grow{flex:1;min-width:0}
+.name{font-weight:600}
+.m{color:var(--mute);font-size:13px}
+.amt{font-weight:800;white-space:nowrap}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%}
+input,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:400 16px Cairo,Tahoma;margin-bottom:8px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{width:100%;padding:12px;border:0;border-radius:10px;background:var(--ink);color:var(--bg);font:800 16px Cairo,Tahoma;cursor:pointer}
+.sm{border:1px solid var(--line);background:none;color:var(--ink);border-radius:8px;padding:5px 10px;font:600 13px Cairo,Tahoma;cursor:pointer}
+.del{color:var(--red);border-color:transparent}
+.paid{opacity:.5}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:6px 14px;font:600 14px Cairo,Tahoma;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--bg)}
+.late{color:var(--red)}
+.empty{color:var(--mute);text-align:center;padding:20px 0}
+section{display:none}section.on{display:block}
+</style>
+</head>
+<body>
+<header><h1>مصاريفي</h1><div class="sub" id="month"></div></header>
+<main>
+
+<section id="s-sum" class="on">
+  <div class="card"><div class="m">دخل هذا الشهر</div><div class="total" id="inc-tot" style="color:var(--c7)"></div><div class="m">المتبقي بعد المصاريف والمستحقات</div><div class="total" id="left"></div></div>
+  <div class="card"><div class="m">إجمالي المصاريف هذا الشهر</div><div class="total" id="tot"></div>
+    <div class="m" id="extra"></div></div>
+  <div class="card" id="cats"></div>
+  <div class="card"><b>المطلوب سداده</b><div id="due"></div></div>
+</section>
+
+<section id="s-inc">
+  <div class="card">
+    <input id="n-name" placeholder="مصدر الدخل (راتب، شغل إضافي، إيجار...)">
+    <div class="g2"><input id="n-amt" type="number" inputmode="decimal" placeholder="المبلغ"><input id="n-date" type="date"></div>
+    <select id="n-rec"><option value="1">يتكرر كل شهر (زي الراتب)</option><option value="0">مرة واحدة</option></select>
+    <button class="btn" onclick="addInc()">إضافة دخل</button>
+  </div>
+  <div class="card" id="n-list"></div>
+</section>
+
+<section id="s-exp">
+  <div class="card">
+    <div class="g2"><input id="e-amt" type="number" inputmode="decimal" placeholder="المبلغ"><select id="e-cat"></select></div>
+    <select id="e-sub" style="display:none"></select>
+    <div class="g2"><input id="e-note" placeholder="ملاحظة (مثلاً: بقالة)"><input id="e-date" type="date"></div>
+    <button class="btn" onclick="addExp()">إضافة مصروف</button>
+  </div>
+  <div class="chips" id="f-chips"></div>
+  <div class="card" id="e-list"></div>
+</section>
+
+<section id="s-inst">
+  <div class="card">
+    <input id="i-name" placeholder="اسم القسط (مثلاً: قسط التلاجة)">
+    <div class="g2"><input id="i-amt" type="number" inputmode="decimal" placeholder="القسط الشهري"><input id="i-n" type="number" inputmode="numeric" placeholder="عدد الأقساط"></div>
+    <input id="i-day" type="number" min="1" max="31" inputmode="numeric" placeholder="يوم الاستحقاق في الشهر">
+    <button class="btn" onclick="addInst()">إضافة قسط</button>
+  </div>
+  <div class="card" id="i-list"></div>
+</section>
+
+<section id="s-bill">
+  <div class="card">
+    <input id="b-name" placeholder="اسم الفاتورة (كهرباء، مياه، نت...)">
+    <div class="g2"><input id="b-amt" type="number" inputmode="decimal" placeholder="المبلغ"><input id="b-date" type="date"></div>
+    <button class="btn" onclick="addBill()">إضافة فاتورة</button>
+  </div>
+  <div class="card" id="b-list"></div>
+</section>
+
+</main>
+<nav>
+  <button class="on" data-t="sum">الملخص</button>
+  <button data-t="inc">الدخل</button>
+  <button data-t="exp">المصاريف</button>
+  <button data-t="inst">الأقساط</button>
+  <button data-t="bill">الفواتير</button>
+</nav>
+
+<script>
+var CATS={personal:{n:'مصروفي الشخصي',c:'var(--c1)'},wife:{n:'مصروف مراتي',c:'var(--c6)'},home:{n:'البيت',c:'var(--c2)'},baby:{n:'البيبي',c:'var(--c3)'},car:{n:'العربية',c:'var(--c8)'}};
+var S={exp:[],inst:[],bills:[],inc:[]};
+var filter='all';
+try{var raw=localStorage.getItem('masrofaty');if(raw)S=JSON.parse(raw);if(!S.inc)S.inc=[]}catch(e){}
+function save(){try{localStorage.setItem('masrofaty',JSON.stringify(S))}catch(e){}render()}
+function $(i){return document.getElementById(i)}
+function fmt(n){return Number(n).toLocaleString('ar-EG',{maximumFractionDigits:2})+' ج'}
+function today(){return new Date().toISOString().slice(0,10)}
+function mk(d){return d.slice(0,7)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function id(){return Date.now()+Math.random()}
+
+$('e-cat').innerHTML=Object.keys(CATS).map(function(k){return '<option value="'+k+'">'+CATS[k].n+'</option>'}).join('');
+var SUBS=['بنزين','صيانة','غسيل','تغيير زيت','إطارات','ترخيص وتأمين','مخالفات','جراج / ركنة','أخرى'];
+$('e-sub').innerHTML=SUBS.map(function(x){return '<option>'+x+'</option>'}).join('');
+$('e-cat').onchange=function(){$('e-sub').style.display=this.value==='car'?'block':'none'};
+$('e-date').value=today();
+$('b-date').value=today();$('n-date').value=today();
+
+document.querySelectorAll('nav button').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('nav button,section').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');$('s-'+b.dataset.t).classList.add('on');window.scrollTo(0,0)}});
+
+function addExp(){var a=parseFloat($('e-amt').value);if(!a||a<=0){$('e-amt').focus();return}
+  var cat=$('e-cat').value;S.exp.unshift({id:id(),cat:cat,sub:cat==='car'?$('e-sub').value:'',amt:a,note:$('e-note').value.trim(),date:$('e-date').value||today()});
+  $('e-amt').value='';$('e-note').value='';save()}
+function addInc(){var n=$('n-name').value.trim(),a=parseFloat($('n-amt').value);
+  if(!n||!a){alert('اكتب مصدر الدخل والمبلغ');return}
+  S.inc.unshift({id:id(),name:n,amt:a,date:$('n-date').value||today(),rec:$('n-rec').value==='1'});
+  $('n-name').value='';$('n-amt').value='';save()}
+function incIn(x,now){return x.rec?mk(x.date)<=now:mk(x.date)===now}
+function addInst(){var n=$('i-name').value.trim(),a=parseFloat($('i-amt').value),c=parseInt($('i-n').value),d=parseInt($('i-day').value);
+  if(!n||!a||!c||!d||d<1||d>31){alert('اكتب الاسم والقسط وعدد الأقساط ويوم الاستحقاق (1-31)');return}
+  S.inst.push({id:id(),name:n,amt:a,n:c,paid:0,day:d,last:''});
+  ['i-name','i-amt','i-n','i-day'].forEach(function(x){$(x).value=''});save()}
+function addBill(){var n=$('b-name').value.trim(),a=parseFloat($('b-amt').value);
+  if(!n||!a){alert('اكتب اسم الفاتورة والمبلغ');return}
+  S.bills.unshift({id:id(),name:n,amt:a,date:$('b-date').value||today(),paid:false});
+  $('b-name').value='';$('b-amt').value='';save()}
+function rm(k,i){if(confirm('تمسح العنصر ده؟')){S[k]=S[k].filter(function(x){return x.id!==i});save()}}
+function payInst(i){var x=S.inst.find(function(y){return y.id===i});
+  if(x.last===mk(today())){alert('قسط الشهر ده اتسدد قبل كده');return}
+  if(x.paid<x.n){x.paid++;x.last=mk(today());S.exp.unshift({id:id(),cat:'home',amt:x.amt,note:'قسط: '+x.name,date:today(),auto:1})}save()}
+function toggleBill(i){var x=S.bills.find(function(y){return y.id===i});x.paid=!x.paid;save()}
+function setF(f){filter=f;render()}
+
+function render(){
+  var now=mk(today());
+  $('month').textContent=new Date().toLocaleDateString('ar-EG',{month:'long',year:'numeric'});
+  var mexp=S.exp.filter(function(e){return mk(e.date)===now});
+  var sums={},tot=0;Object.keys(CATS).forEach(function(k){sums[k]=0});
+  mexp.forEach(function(e){sums[e.cat]+=e.amt;tot+=e.amt});
+  $('tot').textContent=fmt(tot);
+  var incM=S.inc.filter(function(x){return incIn(x,now)}).reduce(function(s,x){return s+x.amt},0);
+  $('inc-tot').textContent=fmt(incM);
+  var instDue=S.inst.filter(function(x){return x.paid<x.n&&x.last!==now}).reduce(function(s,x){return s+x.amt},0);
+  var billDue=S.bills.filter(function(b){return !b.paid}).reduce(function(s,b){return s+b.amt},0);
+  var lf=incM-tot-instDue-billDue;$('left').textContent=fmt(lf);$('left').style.color=lf<0?'var(--red)':'var(--ink)';
+  $('extra').textContent='متبقي هذا الشهر: أقساط '+fmt(instDue)+' + فواتير '+fmt(billDue);
+  $('cats').innerHTML=Object.keys(CATS).map(function(k){var p=tot?Math.round(sums[k]/tot*100):0;
+    return '<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span><span class="dot" style="background:'+CATS[k].c+';display:inline-block"></span> '+CATS[k].n+'</span><span class="amt">'+fmt(sums[k])+'</span></div><div class="bar"><i style="width:'+p+'%;background:'+CATS[k].c+'"></i></div></div>'}).join('');
+
+  var cs={};mexp.forEach(function(e){if(e.cat==='car'){var k=e.sub||'أخرى';cs[k]=(cs[k]||0)+e.amt}});
+  if(Object.keys(cs).length)$('cats').innerHTML+='<div class="m" style="margin-top:12px">تفصيل العربية</div>'+Object.keys(cs).map(function(k){return '<div class="row"><span class="m">'+k+'</span><span class="amt">'+fmt(cs[k])+'</span></div>'}).join('');
+  var due=[];
+  S.inst.forEach(function(x){if(x.paid<x.n&&x.last!==now)due.push({t:x.name,m:'قسط - يوم '+x.day,a:x.amt,c:'var(--c4)'})});
+  S.bills.forEach(function(b){if(!b.paid)due.push({t:b.name,m:'فاتورة - '+b.date,a:b.amt,c:'var(--c5)'})});
+  $('due').innerHTML=due.length?due.map(function(d){return '<div class="row"><span class="dot" style="background:'+d.c+'"></span><div class="grow"><div class="name">'+esc(d.t)+'</div><div class="m">'+d.m+'</div></div><div class="amt">'+fmt(d.a)+'</div></div>'}).join(''):'<div class="empty">مفيش حاجة مستحقة</div>';
+
+  var fl=[['all','الكل']].concat(Object.keys(CATS).map(function(k){return[k,CATS[k].n]}));
+  $('f-chips').innerHTML=fl.map(function(f){return '<button class="chip'+(filter===f[0]?' on':'')+'" onclick="setF(\''+f[0]+'\')">'+f[1]+'</button>'}).join('');
+  var list=S.exp.filter(function(e){return filter==='all'||e.cat===filter}).sort(function(a,b){return b.date.localeCompare(a.date)});
+  $('e-list').innerHTML=list.length?list.map(function(e){return '<div class="row"><span class="dot" style="background:'+CATS[e.cat].c+'"></span><div class="grow"><div class="name">'+(esc(e.note)||e.sub||CATS[e.cat].n)+'</div><div class="m">'+CATS[e.cat].n+(e.sub?' / '+e.sub:'')+' - '+e.date+'</div></div><div class="amt">'+fmt(e.amt)+'</div><button class="sm del" onclick="rm(\'exp\','+e.id+')">حذف</button></div>'}).join(''):'<div class="empty">ضيف أول مصروف من فوق</div>';
+
+  $('i-list').innerHTML=S.inst.length?S.inst.map(function(x){var left=x.n-x.paid,p=Math.round(x.paid/x.n*100),done=left===0,paidNow=x.last===now;
+    return '<div class="row'+(done?' paid':'')+'" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="name">'+esc(x.name)+'</div><div class="m">يوم '+x.day+' كل شهر - باقي '+left+' من '+x.n+' (إجمالي متبقي '+fmt(left*x.amt)+')</div></div><div class="amt">'+fmt(x.amt)+'</div></div><div class="bar"><i style="width:'+p+'%;background:var(--c4)"></i></div><div style="margin-top:8px;display:flex;gap:6px">'+(done?'<span class="m">خلص السداد</span>':'<button class="sm" onclick="payInst('+x.id+')">'+(paidNow?'اتسدد الشهر ده':'سددت القسط')+'</button>')+'<button class="sm del" onclick="rm(\'inst\','+x.id+')">حذف</button></div></div>'}).join(''):'<div class="empty">مفيش أقساط مسجلة</div>';
+
+  $('n-list').innerHTML=S.inc.length?S.inc.map(function(x){return '<div class="row"><span class="dot" style="background:var(--c7)"></span><div class="grow"><div class="name">'+esc(x.name)+'</div><div class="m">'+(x.rec?'شهري ثابت - من ':'مرة واحدة - ')+x.date+'</div></div><div class="amt">'+fmt(x.amt)+'</div><button class="sm del" onclick="rm(\'inc\','+x.id+')">حذف</button></div>'}).join(''):'<div class="empty">ضيف الراتب ومصادر الدخل من فوق</div>';
+
+  var t=today();
+  $('b-list').innerHTML=S.bills.length?S.bills.slice().sort(function(a,b){return a.paid-b.paid||a.date.localeCompare(b.date)}).map(function(b){var late=!b.paid&&b.date<t;
+    return '<div class="row'+(b.paid?' paid':'')+'"><span class="dot" style="background:var(--c5)"></span><div class="grow"><div class="name">'+esc(b.name)+'</div><div class="m'+(late?' late':'')+'">'+(late?'متأخرة - ':'')+b.date+'</div></div><div class="amt">'+fmt(b.amt)+'</div><button class="sm" onclick="toggleBill('+b.id+')">'+(b.paid?'تراجع':'اتدفعت')+'</button><button class="sm del" onclick="rm(\'bills\','+b.id+')">حذف</button></div>'}).join(''):'<div class="empty">مفيش فواتير مسجلة</div>';
+}
+render();
+</script>
+</body>
+</html>
